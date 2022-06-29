@@ -1,0 +1,64 @@
+version: 2.1
+
+command:
+  print_pipeline_id:
+    parameters:
+      id:
+        type: string
+    steps:
+      - run: echo << parameters.id >>
+
+jobs:
+  build:
+    docker:
+      - image: cimg/base:2020.01
+    steps:
+      - checkout
+      - run:
+          name: "echo an env var that is part of our project"
+          command: |
+            echo $MY_ENV_VAR
+  print_hello:
+    docker:
+      - image: circleci/node:13.8.0
+    steps:
+      run:
+        name: print_hello
+        command: |
+          echo Hello
+  print_world:
+    docker:
+      - image: circleci/node:13.8.0
+    steps:
+      run:
+        name: print_world
+        command: |
+          echo World
+  
+  print_workflow_id:
+    docker:
+      - image: circleci/node:10.16.0
+    steps:
+      - print_pipeline_id:
+          id: << pipeline.id >>
+  
+  on_fail_state:
+    docker:
+      - image: circleci/node:10.16.0
+    steps:
+      - run: exit 1
+      - run:
+          name: on error
+          command: echo "Hello Error!"
+          when: on_fail
+  
+
+workflows:
+  welcome:
+    jobs:
+      - print_hello
+      - print_world:
+          requires: [print_hello]
+      - build
+      - print_workflow_id
+      - on_fail_state
